@@ -1,0 +1,13 @@
+class Main {
+    function void main() {
+        var Game game;
+
+        // Initialize the game
+        let game = Game.new();
+
+        // Start the game - this will handle all turns
+        do game.run();
+
+        return;
+    }
+}

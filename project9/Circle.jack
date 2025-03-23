@@ -1,0 +1,29 @@
+/** Implements an outline circle (frame only) sized to fit inside a grid cell. */
+class Circle {
+   field int x, y; // screen location of the center of the circle
+   field int size; // radius of the circle
+
+   /** Constructs and draws a new outline circle within a grid cell. */
+   constructor Circle new(int ax, int ay, int cellSize) {
+      let x = ax + (cellSize / 2); // Center horizontally within the cell
+      let y = ay + (cellSize / 2); // Center vertically within the cell
+      let size = (cellSize / 2) - 2; // Slight padding for the circle
+      return this;
+   }
+
+   /** Draws this circle as an outline in its current (x,y) location */
+   method void draw() {
+      do Screen.setColor(true); // Set color to black
+      do Screen.drawCircle(x, y, size);
+      return;
+   }
+
+   /** Disposes this circle. */
+   method void dispose() {
+      do Memory.deAlloc(this);
+   
+   return;
+   }
+}
+
+

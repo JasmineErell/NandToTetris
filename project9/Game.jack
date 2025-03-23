@@ -1,0 +1,349 @@
+class Game {
+    field Grid grid;
+    field X xSymbol;
+    field Circle circleSymbol;
+    field char currentPlayer;
+    field int turnsPlayed;
+    field Array cellsOccupied;    // Track which cells are taken
+    field Array winningCells;     // Track winning combination
+
+    /** Constructs a new game */
+    constructor Game new() {
+        var int i;
+        let grid = Grid.new(20);          // Create 20px cell size grid without drawing
+        let xSymbol = X.new(-1, -1, 20);  // Initialize off-screen
+        let circleSymbol = Circle.new(-1, -1, 20);
+        let turnsPlayed = 0;
+
+        // Initialize cells tracking array (0 = empty, 88 = X, 79 = O)
+        let cellsOccupied = Array.new(10); // 0-9 (0 unused for easier indexing)
+        let winningCells = Array.new(10);  // Track winning combination
+
+        let i = 0;
+        while (i < 10) {
+            let cellsOccupied[i] = 0;
+            let winningCells[i] = false;
+            let i = i + 1;
+        }
+
+        return this;
+    }
+
+    /** Starts and runs the game */
+    method void run() {
+        var char key;
+
+        // First get player choice
+        do StartScreen.display();
+        let currentPlayer = StartScreen.getChoice();
+
+        // Wait a moment to show the choice
+        do Sys.wait(1000);
+
+        // Now clear and draw the grid just once
+        do Screen.clearScreen();
+        do grid.draw();
+
+        // Main game loop
+        while (turnsPlayed < 9) {
+            do playerTurn(currentPlayer);
+
+            // Switch player for next turn
+            if (currentPlayer = 88) {  // ASCII for 'X'
+                let currentPlayer = 79; // ASCII for 'O'
+            }
+            else {
+                let currentPlayer = 88; // ASCII for 'X'
+            }
+
+            let turnsPlayed = turnsPlayed + 1;
+
+            // Clear the previous prompt
+            do Output.moveCursor(20, 0);
+            do Output.printString("                                                     ");
+
+            // Check for winner after each move
+            if (checkWinner()) {
+                do announceWinner();
+                return;
+            }
+        }
+
+        // Game over - it's a draw
+        do displayDraw();
+        return;
+    }
+
+    /** Displays draw message and waits for key press */
+    method void displayDraw() {
+        var char key;
+
+        // Clear bottom portion
+        do Screen.setColor(false);
+        do Screen.drawRectangle(0, 200, 511, 255);
+        do Screen.setColor(true);
+
+        do Output.moveCursor(17, 25);
+        do Output.printString("IT'S A DRAW!");
+        do Output.moveCursor(19, 20);
+        do Output.printString("Press any key to end");
+
+        // Wait for key press and release
+        while (key = 0) {
+            let key = Keyboard.keyPressed();
+        }
+        while (~(key = 0)) {
+            let key = Keyboard.keyPressed();
+        }
+        return;
+    }
+
+    /** Handles a player's turn with improved input validation */
+    method void playerTurn(char player) {
+        var char key;
+        var int cell;
+        var boolean validMove;
+        var String errorMsg;
+
+        let validMove = false;
+        let errorMsg = "Invalid move! Cell must be 1-9 and unoccupied.";
+
+        while (~validMove) {
+            // Display the player prompt with clearer instructions
+            do Output.moveCursor(20, 0);
+            do Output.printString("Player ");
+            do Output.printChar(player);
+            do Output.printString(", enter 1-9 to place your ");
+            do Output.printChar(player);
+            do Output.printString(" in that cell");
+
+            // Wait for a key press
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+            }
+
+            // Check if key is a number
+            if ((key < 49) | (key > 57)) {  // ASCII 49-57 are digits 1-9
+                do Output.moveCursor(21, 0);
+                do Output.printString(errorMsg);
+                do Sys.wait(1000);
+                do Output.moveCursor(21, 0);
+                do Output.printString("                                              ");
+            } else {
+                let cell = key - 48;  // Convert ASCII to integer
+
+                // Check if cell is already occupied
+                if (cellsOccupied[cell] = 0) {
+                    let validMove = true;
+                    let cellsOccupied[cell] = player;
+                    do turn(player, cell);
+                } else {
+                    do Output.moveCursor(21, 0);
+                    do Output.printString("That cell is already taken!");
+                    do Sys.wait(1000);
+                    do Output.moveCursor(21, 0);
+                    do Output.printString("                           ");
+                }
+            }
+
+            // Wait for key release
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+            }
+        }
+        return;
+    }
+
+    /** Draws a symbol in the specified cell */
+    method void turn(char player, int cell) {
+        var int centerX, centerY;
+
+        let centerX = grid.getXValue(cell);
+        let centerY = grid.getYValue(cell);
+
+        do grid.clearCell(cell);
+        if (player = 88) { // ASCII for 'X'
+            do xSymbol.dispose();
+            let xSymbol = X.new(centerX - 10, centerY - 10, 20);
+            do xSymbol.draw();
+        } else {
+            do circleSymbol.dispose();
+            let circleSymbol = Circle.new(centerX - 10, centerY - 10, 20);
+            do circleSymbol.draw();
+        }
+        return;
+    }
+
+    /** Checks for a winner and marks winning cells */
+    method boolean checkWinner() {
+        var int i;
+
+        // Reset winning cells
+        let i = 0;
+        while (i < 10) {
+            let winningCells[i] = false;
+            let i = i + 1;
+        }
+
+        // Check rows
+        let i = 1;
+        while (i < 8) {
+            if (~(cellsOccupied[i] = 0)) {
+                if ((cellsOccupied[i] = cellsOccupied[i+1]) &
+                    (cellsOccupied[i] = cellsOccupied[i+2])) {
+                    let winningCells[i] = true;
+                    let winningCells[i+1] = true;
+                    let winningCells[i+2] = true;
+                    do drawWinningLine(i, i+2);
+                    return true;
+                }
+            }
+            let i = i + 3;
+        }
+
+        // Check columns
+        let i = 1;
+        while (i < 4) {
+            if (~(cellsOccupied[i] = 0)) {
+                if ((cellsOccupied[i] = cellsOccupied[i+3]) &
+                    (cellsOccupied[i] = cellsOccupied[i+6])) {
+                    let winningCells[i] = true;
+                    let winningCells[i+3] = true;
+                    let winningCells[i+6] = true;
+                    do drawWinningLine(i, i+6);
+                    return true;
+                }
+            }
+            let i = i + 1;
+        }
+
+        // Check diagonals
+        if (~(cellsOccupied[1] = 0)) {
+            if ((cellsOccupied[1] = cellsOccupied[5]) &
+                (cellsOccupied[1] = cellsOccupied[9])) {
+                let winningCells[1] = true;
+                let winningCells[5] = true;
+                let winningCells[9] = true;
+                do drawWinningLine(1, 9);
+                return true;
+            }
+        }
+
+        if (~(cellsOccupied[3] = 0)) {
+            if ((cellsOccupied[3] = cellsOccupied[5]) &
+                (cellsOccupied[3] = cellsOccupied[7])) {
+                let winningCells[3] = true;
+                let winningCells[5] = true;
+                let winningCells[7] = true;
+                do drawWinningLine(3, 7);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /** Draws a line through the winning cells */
+    method void drawWinningLine(int start, int end) {
+        var int startX, startY, endX, endY;
+
+        let startX = grid.getXValue(start);
+        let startY = grid.getYValue(start);
+        let endX = grid.getXValue(end);
+        let endY = grid.getYValue(end);
+
+        do Screen.setColor(true);
+        do Screen.drawLine(startX, startY, endX, endY);
+        return;
+    }
+
+    /** Announces the winner with improved visuals */
+    method void announceWinner() {
+        var char key;
+
+        // Clear the bottom portion of the screen
+        do Screen.setColor(false);
+        do Screen.drawRectangle(0, 200, 511, 255);
+        do Screen.setColor(true);
+
+        // Display winner message
+        do Output.moveCursor(17, 25);
+        if (currentPlayer = 88) {  // If current is X, O won
+            let currentPlayer = 79;
+            do Output.printString("O WON THE GAME!");
+        } else {                   // If current is O, X won
+            let currentPlayer = 88;
+            do Output.printString("X WON THE GAME!");
+        }
+
+        // Add subtle end game instruction
+        do Output.moveCursor(19, 20);
+        do Output.printString("Press any key to end");
+
+        // Highlight winning combination
+        do highlightWinningCells();
+
+        // Wait for key press and release
+        while (key = 0) {
+            let key = Keyboard.keyPressed();
+        }
+        while (~(key = 0)) {
+            let key = Keyboard.keyPressed();
+        }
+        return;
+    }
+
+    /** Highlights the winning cells by flashing them */
+    method void highlightWinningCells() {
+        var int i;
+        let i = 0;
+
+        // Flash winning cells 3 times
+        while (i < 3) {
+            do Sys.wait(500);  // Wait half a second
+            do Screen.setColor(false);  // Clear cells
+            do redrawWinningCells();
+            do Sys.wait(500);
+            do Screen.setColor(true);   // Redraw cells
+            do redrawWinningCells();
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Redraws the winning cells - helper for highlighting */
+    method void redrawWinningCells() {
+        var int i, centerX, centerY;
+        let i = 1;
+
+        while (i < 10) {
+            if (winningCells[i]) {
+                let centerX = grid.getXValue(i);
+                let centerY = grid.getYValue(i);
+                if (cellsOccupied[i] = 88) {  // X
+                    do xSymbol.draw();
+                } else {                       // O
+                    do circleSymbol.draw();
+                }
+            }
+            let i = i + 1;
+        }
+        return;
+    }
+
+    /** Checks if a cell is part of the winning combination */
+    method boolean isWinningCell(int cell) {
+        return winningCells[cell];
+    }
+
+    /** Releases the game resources */
+    method void dispose() {
+        do grid.dispose();
+        do xSymbol.dispose();
+        do circleSymbol.dispose();
+        do cellsOccupied.dispose();
+        do winningCells.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+}

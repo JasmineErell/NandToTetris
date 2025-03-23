@@ -1,0 +1,31 @@
+/** Implements an X sized to fit inside a grid cell. */
+class X {
+   field int x, y; // screen location of the center of the X
+   field int size; // half the length of each diagonal line
+
+   /** Constructs and draws a new X within a grid cell. */
+   constructor X new(int ax, int ay, int cellSize) {
+      let x = ax + (cellSize / 2); // Center horizontally within the cell
+      let y = ay + (cellSize / 2); // Center vertically within the cell
+      let size = (cellSize / 2) - 2; // Slight padding for the X
+      return this;
+   }
+
+   /** Draws this X in its current (x,y) location. */
+   method void draw() {
+      do Screen.setColor(true); // Set color to black
+
+      // First diagonal line (\)
+      do Screen.drawLine(x - size, y - size, x + size, y + size);
+      // Second diagonal line (/)
+      do Screen.drawLine(x - size, y + size, x + size, y - size);
+
+      return;
+   }
+
+   /** Disposes this X. */
+   method void dispose() {
+      do Memory.deAlloc(this);
+      return;
+   }
+}

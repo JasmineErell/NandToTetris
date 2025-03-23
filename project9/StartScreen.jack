@@ -1,0 +1,62 @@
+class StartScreen {
+    static char chosenPlayer; // Make this static
+
+    /** Displays the start screen message using the Output API. */
+    function void display() {
+        do Screen.clearScreen();
+
+        // Title Line
+        do Output.moveCursor(4, 20);
+        do Output.printString("=== TIC TAC TOE ===");
+
+        // Instructions
+        do Output.moveCursor(6, 15);
+        do Output.printString("Ready to play TIC TAC TOE?");
+
+        do Output.moveCursor(8, 15);
+        do Output.printString("Choose who starts:");
+
+        do Output.moveCursor(10, 15);
+        do Output.printString("Press X for X to start");
+
+        do Output.moveCursor(12, 15);
+        do Output.printString("Press C for Circle to start");
+
+        // Wait for User Input
+        do StartScreen.waitForChoice();  // Call static method
+        return;
+    }
+
+    /** Waits for the user to press 'X' or 'C' and stores the choice. */
+    function void waitForChoice() {  // Make this static
+        var char key;
+
+        while (true) {
+            let key = Keyboard.keyPressed();
+
+            // Check for X/x
+            if ((key = 88) | (key = 120)) { // ASCII for 'X' or 'x'
+                let chosenPlayer = 88; // Store 'X'
+                do Output.moveCursor(14, 15);
+                do Output.printString("Player chosen: ");
+                do Output.printChar(chosenPlayer);
+                return;
+            }
+
+            // Check for C/c
+            if ((key = 67) | (key = 99)) { // ASCII for 'C' or 'c'
+                let chosenPlayer = 79; // Store 'O'
+                do Output.moveCursor(14, 15);
+                do Output.printString("Player chosen: ");
+                do Output.printChar(chosenPlayer);
+                return;
+            }
+        }
+        return;
+    }
+
+    /** Retrieves the stored player's choice. */
+    function char getChoice() {  // Make this static
+        return chosenPlayer;
+    }
+}
